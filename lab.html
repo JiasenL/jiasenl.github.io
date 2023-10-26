@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Labourchere</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-200 font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-semibold mb-4">Simple Labourchere</h1>
+        <div class="flex space-x-4">
+            <button id="win-button" class="bg-blue-500 hover:bg-blue-600 text-white py-4 w-1/2 rounded-lg text-lg" onclick="betOutcome('W')">Win</button>
+            <button id="lose-button" class="bg-red-500 hover:bg-red-600 text-white py-4 w-1/2 rounded-lg text-lg" onclick="betOutcome('L')">Lose</button>
+        </div>
+        <div class="mt-8">
+            <div class="mb-4">
+                <label for="sequence-input" class="block text-lg font-semibold mb-2">Enter Sequence:</label>
+                <input type="text" id="sequence-input" oninput="updateSequence" class="w-full p-2 border rounded-lg text-xs" placeholder="e.g., 15, 15, 15, 15, 15">
+            </div>
+            <p>Bet Amount: <span id="bet-amount" class="font-bold text-2xl underline underline-offset-4"></span></p>
+            <p id="sequence-message" class="font-normal">Numbers in Sequence: <span id="sequence-count" class="font-normal">0</span></p>
+            <p>Total Profit: <span id="total-profit" class="font-normal">0</span></p>
+        </div>
+        <div id="game-summary" class="mt-8 hidden">
+            <h2 class="text-2xl font-semibold">Game Summary</h2>
+            <p>Profit: <span id="profit" class="font-semibold">0</span></p>
+            <p>Total Steps: <span id="steps" class="font-semibold">0</span></p>
+            <p>Wins: <span id="wins" class="font-semibold">0</span>, Losses: <span id="losses" class="font-semibold">0</span>, Win-Lose Ratio: <span id="win-lose-ratio" class="font-semibold">0</span></p>
+            <p>Max Negative: <span id="max-negative" class="font-semibold">0</span></p>
+        </div>
+        
+        <button class="bg-gray-400 hover:bg-gray-600 text-white py-4 px-12 rounded-lg text-lg mt-8" onclick="resetGame()">Reset Game</button>
+    </div>
+
+    <script>
+        // JavaScript code to interact with the game
+        let sequenceInput = document.getElementById("sequence-input");
+        let sequenceMessage = document.getElementById("sequence-message");
+        let sequenceCount = document.getElementById("sequence-count");
+        let betAmount = document.getElementById("bet-amount"); // Select the bet amount element
+        let sequence = [];
+        let bankroll = 0;
+        let totalLoss = 0;
+        let maxNegative = 0;
+        let win = 0;
+        let lose = 0;
+        let steps = 0;
+
+
+        // Function to save game data to LocalStorage
+        function saveGameData() {
+            const gameData = {
+                sequence: sequenceInput.value,
+                bankroll,
+                steps,
+                win,
+                lose
+            };
+            localStorage.setItem("gameData", JSON.stringify(gameData));
+        }
+
+        // Update the game state and save data
+        function updateGameState() {
+            updateSequence();
+            saveGameData();
+        }
+        // Load the saved game data when the page loads or is refreshed
+        window.addEventListener("load", function () {
+            const storedData = JSON.parse(localStorage.getItem("gameData"));
+
+            if (storedData) {
+                sequenceInput.value = storedData.sequence;
+                updateSequence();
+
+                bankroll = storedData.bankroll;
+                steps = storedData.steps;
+                win = storedData.win;
+                lose = storedData.lose;
+
+                displayTotalLoss();
+                displayBetAmount();
+                displaySequenceCount();
+
+                if (sequence.length === 0) {
+                    showGameSummary();
+                }
+            }
+        });
+        // Add event listeners to relevant elements
+        sequenceInput.addEventListener("input", updateGameState);
+        document.getElementById("win-button").addEventListener("click", updateGameState);
+        document.getElementById("lose-button").addEventListener("click", updateGameState);
+
+        // Load the saved game data when the page loads
+        const storedData = JSON.parse(localStorage.getItem("gameData"));
+
+        if (storedData) {
+            sequenceInput.value = storedData.sequence;
+            updateSequence();
+
+            bankroll = storedData.bankroll;
+            steps = storedData.steps;
+            win = storedData.win;
+            lose = storedData.lose;
+
+            displayTotalLoss();
+            displayBetAmount();
+            displaySequenceCount();
+
+            if (sequence.length === 0) {
+                showGameSummary();
+            }
+        }
+
+
+        function updateSequence() {
+            sequence = parseSequence(sequenceInput.value);
+            displayBetAmount();
+            displaySequenceCount();
+        }
+
+        function displayTotalLoss() {
+            const totalLossDisplay = document.getElementById("total-profit");
+            totalLossDisplay.textContent = bankroll;
+        }
+
+        function displayBetAmount() {
+            let bet = 0;
+            if (sequence.length === 1) {
+                bet = sequence[0];
+            } else {
+                bet = sequence[0] + sequence[sequence.length - 1];
+            }
+            betAmount.textContent = bet; // Update the content of the bet amount
+        }
+
+        function displaySequenceCount() {
+            sequenceCount.textContent = sequence.length;
+        }
+
+        function parseSequence(sequenceText) {
+            // Parse the sequence from a comma-separated string
+            return sequenceText.split(',').map(Number);
+        }
+
+        function betOutcome(result) {
+            if (sequence.length === 0) {
+                // If the sequence is empty, the game is fully won, so disable the buttons
+                document.getElementById("win-button").disabled = true;
+                document.getElementById("lose-button").disabled = true;
+                return;
+            }
+
+            let bet = 0;
+            if (sequence.length === 1) {
+                bet = sequence[0];
+            } else {
+                bet = sequence[0] + sequence[sequence.length - 1];
+            }
+
+            if (result === 'W') {
+                bankroll += bet;
+                if (sequence.length === 1) {
+                    sequence = [];
+                } else {
+                    sequence.shift();
+                    sequence.pop();
+                }
+                win++;
+            } else if (result === 'L') {
+                bankroll -= bet;
+                totalLoss += bet;
+                sequence.push(bet);
+                lose++;
+                if (bankroll < maxNegative) {
+                    maxNegative = bankroll;
+                }
+            }
+
+            sequenceInput.value = sequence.join(', ');
+            displayTotalLoss();
+            displayBetAmount();
+            displaySequenceCount();
+            steps++;
+
+            // Check if the sequence is empty and show the game summary
+            if (sequence.length === 0) {
+                showGameSummary();
+            }
+        }
+
+
+        function showGameSummary() {
+            const totalBets = win + lose;
+            const winLoseRatio = totalBets === 0 ? 0 : (win / totalBets).toFixed(2);
+            const profitDisplay = document.getElementById("profit");
+            profitDisplay.textContent = bankroll;
+            const stepsDisplay = document.getElementById("steps");
+            stepsDisplay.textContent = steps;
+            const winsDisplay = document.getElementById("wins");
+            winsDisplay.textContent = win;
+            const lossesDisplay = document.getElementById("losses");
+            lossesDisplay.textContent = lose;
+            const winLoseRatioDisplay = document.getElementById("win-lose-ratio");
+            winLoseRatioDisplay.textContent = winLoseRatio;
+            const maxNegativeDisplay = document.getElementById("max-negative");
+            maxNegativeDisplay.textContent = maxNegative;
+
+            const gameSummary = document.getElementById("game-summary");
+            gameSummary.style.display = "block";
+        }
+
+        // Set the initial sequence in the input field
+        sequenceInput.value = "15, 15, 15, 15, 15, 15, 15, 15, 15, 15";
+        updateSequence();
+
+        // Display the initial total loss, bet amount, and sequence count
+        displayTotalLoss();
+        displayBetAmount();
+        displaySequenceCount();
+
+        function resetGame() {
+            sequenceInput.value = "15, 15, 15, 15, 15, 15, 15, 15, 15, 15";
+            updateSequence();
+            bankroll = 0;
+            totalLoss = 0;
+            maxNegative = 0;
+            win = 0;
+            lose = 0;
+            steps = 0;
+
+            // Enable the "Win" and "Lose" buttons
+            document.getElementById("win-button").disabled = false;
+            document.getElementById("lose-button").disabled = false;
+
+            displayTotalLoss();
+            const gameSummary = document.getElementById("game-summary");
+            gameSummary.style.display = "none";
+        }   
+
+    </script>
+</body>
+</html>
