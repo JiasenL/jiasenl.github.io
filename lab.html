@@ -47,7 +47,6 @@
         let betAmount = document.getElementById("bet-amount"); // Select the bet amount element
         let sequence = [];
         let bankroll = 0;
-        let totalLoss = 0;
         let maxNegative = 0;
         let win = 0;
         let lose = 0;
@@ -84,7 +83,7 @@
                 win = storedData.win;
                 lose = storedData.lose;
 
-                displayTotalLoss();
+                displayTotalProfit();
                 displayBetAmount();
                 displaySequenceCount();
 
@@ -110,7 +109,7 @@
             win = storedData.win;
             lose = storedData.lose;
 
-            displayTotalLoss();
+            displayTotalProfit();
             displayBetAmount();
             displaySequenceCount();
 
@@ -126,9 +125,9 @@
             displaySequenceCount();
         }
 
-        function displayTotalLoss() {
-            const totalLossDisplay = document.getElementById("total-profit");
-            totalLossDisplay.textContent = bankroll;
+        function displayTotalProfit() {
+            const totalProfitDisplay = document.getElementById("total-profit");
+            totalProfitDisplay.textContent = bankroll;
         }
 
         function displayBetAmount() {
@@ -152,49 +151,51 @@
 
         function betOutcome(result) {
             if (sequence.length === 0) {
-                // If the sequence is empty, the game is fully won, so disable the buttons
-                document.getElementById("win-button").disabled = true;
-                document.getElementById("lose-button").disabled = true;
-                return;
+               // If the sequence is empty, the game is fully won, so disable the buttons
+               document.getElementById("win-button").disabled = true;
+               document.getElementById("lose-button").disabled = true;
+               return;
             }
 
             let bet = 0;
             if (sequence.length === 1) {
-                bet = sequence[0];
+               bet = sequence[0];
             } else {
-                bet = sequence[0] + sequence[sequence.length - 1];
+               bet = sequence[0] + sequence[sequence.length - 1];
             }
 
             if (result === 'W') {
-                bankroll += bet;
-                if (sequence.length === 1) {
-                    sequence = [];
-                } else {
-                    sequence.shift();
-                    sequence.pop();
-                }
-                win++;
+               bankroll += bet;
+               if (sequence.length === 1) {
+                     sequence = [];
+               } else {
+                     sequence.shift();
+                     sequence.pop();
+               }
+               win++;
             } else if (result === 'L') {
-                bankroll -= bet;
-                totalLoss += bet;
-                sequence.push(bet);
-                lose++;
-                if (bankroll < maxNegative) {
-                    maxNegative = bankroll;
-                }
+               bankroll -= bet;
+               sequence.push(bet);
+               lose++;
+               if (bankroll < maxNegative) {
+                     maxNegative = bankroll;
+               }
             }
 
+            // Update total profit
+            const totalProfit = bankroll;
+            document.getElementById("total-profit").textContent = totalProfit;
+
             sequenceInput.value = sequence.join(', ');
-            displayTotalLoss();
             displayBetAmount();
             displaySequenceCount();
             steps++;
 
             // Check if the sequence is empty and show the game summary
             if (sequence.length === 0) {
-                showGameSummary();
+               showGameSummary();
             }
-        }
+         }
 
 
         function showGameSummary() {
@@ -222,28 +223,34 @@
         updateSequence();
 
         // Display the initial total loss, bet amount, and sequence count
-        displayTotalLoss();
+        displayTotalProfit();
         displayBetAmount();
         displaySequenceCount();
 
         function resetGame() {
+            // Set the initial sequence in the input field
             sequenceInput.value = "15, 15, 15, 15, 15, 15, 15, 15, 15, 15";
             updateSequence();
-            bankroll = 0;
-            totalLoss = 0;
-            maxNegative = 0;
-            win = 0;
-            lose = 0;
-            steps = 0;
+
+            // Store default values in local storage
+            const defaultData = {
+                sequence: sequenceInput.value,
+                bankroll: 0,
+                steps: 0,
+                win: 0,
+                lose: 0
+            };
+            localStorage.setItem("gameData", JSON.stringify(defaultData));
 
             // Enable the "Win" and "Lose" buttons
             document.getElementById("win-button").disabled = false;
             document.getElementById("lose-button").disabled = false;
 
-            displayTotalLoss();
+            bankroll = 0;
+            displayTotalProfit();
             const gameSummary = document.getElementById("game-summary");
             gameSummary.style.display = "none";
-        }   
+        }  
 
     </script>
 </body>
