@@ -1,3 +1,6 @@
 {
-  "display": "fullscreen",
+  "name": "HackerWeb",
+  "short_name": "HackerWeb",
+  "display": "standalone",
+  "start_url": "."
 }
