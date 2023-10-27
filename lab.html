@@ -261,6 +261,11 @@
             document.getElementById("lose-button").disabled = false;
 
             bankroll = 0;
+            steps = 0;
+            win = 0;
+            lose = 0;
+            maxNegative = 0;
+            
             displayTotalProfit();
             const gameSummary = document.getElementById("game-summary");
             gameSummary.style.display = "none";
